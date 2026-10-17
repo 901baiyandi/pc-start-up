@@ -413,3 +413,71 @@ main { padding: 4px 16px calc(28px + env(safe-area-inset-bottom)); }
 .scan-row.on .check { background: var(--grad); border-color: transparent; color: #fff; }
 .scan-row.added .check { border-style: dashed; }
 .sheet-cta { position: sticky; bottom: calc(-22px - env(safe-area-inset-bottom)); margin: 14px -18px 0; padding: 12px 18px calc(22px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--surface) 75%, transparent); }
+
+/* ---------- Kurulum rehberi ---------- */
+.guide { display: flex; flex-direction: column; gap: 8px; }
+.g-head { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--faint); margin: 22px 0 10px; }
+.g-step { border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.g-step[open] { border-color: rgba(124, 92, 255, 0.4); }
+.g-step summary { list-style: none; display: flex; align-items: center; gap: 12px; padding: 13px 14px; cursor: pointer; }
+.g-step summary::-webkit-details-marker { display: none; }
+.g-num { width: 28px; height: 28px; border-radius: 9px; flex: none; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: var(--surface-3); color: var(--muted); }
+.g-step[open] .g-num { background: var(--grad); color: #fff; }
+.g-num.q { font-size: 14px; }
+.g-title { flex: 1; font-weight: 700; font-size: 14.5px; }
+.g-chev { width: 8px; height: 8px; border-right: 2px solid var(--faint); border-bottom: 2px solid var(--faint); transform: rotate(45deg); margin: -4px 4px 0 0; transition: transform 0.2s; }
+.g-step[open] .g-chev { transform: rotate(-135deg); margin-top: 4px; }
+.g-body { padding: 0 14px 14px 54px; font-size: 13.5px; line-height: 1.55; color: var(--muted); user-select: text; }
+.g-body p { margin: 0 0 8px; }
+.g-body ol { margin: 0; padding-left: 18px; }
+.g-body li { margin-bottom: 7px; color: var(--text); }
+.g-body li::marker { color: var(--faint); font-weight: 700; }
+.g-body b { color: var(--text); }
+.g-body a { color: #9fb4ff; font-weight: 700; }
+.g-body code, .terms code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 12.5px; padding: 1px 6px; border-radius: 6px; background: var(--surface-3); color: #c7d2ff; }
+
+/* ---------- Lisans sertifikası ---------- */
+.cert { position: relative; padding: 2px; border-radius: 22px; background: linear-gradient(135deg, #7c5cff, #00c2ff 50%, #7c5cff); margin-top: 4px; box-shadow: 0 20px 50px -20px rgba(91, 110, 255, 0.7); }
+.cert-inner {
+  position: relative; overflow: hidden; border-radius: 20px; padding: 26px 20px 20px; text-align: center;
+  background:
+    radial-gradient(90% 60% at 50% 0%, rgba(124, 92, 255, 0.25), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 9px),
+    #0c1019;
+}
+.cert-inner::before { content: ""; position: absolute; inset: 8px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.08); pointer-events: none; }
+.cert-seal { width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(from 0deg, #7c5cff, #00c2ff, #7c5cff); box-shadow: 0 0 0 5px rgba(124, 92, 255, 0.15), 0 10px 26px -8px rgba(0, 194, 255, 0.7); }
+.cert-seal .brand-mark { width: 44px; height: 44px; border-radius: 50%; background: #0c1019; box-shadow: none; }
+.cert-seal .brand-mark::before { inset: 12px; }
+.cert-seal .brand-mark::after { top: 9px; height: 13px; }
+.cert-kicker { font-size: 11px; font-weight: 800; letter-spacing: 0.24em; color: #9fb4ff; }
+.cert-app { font-size: 38px; font-weight: 900; letter-spacing: -0.04em; margin-top: 4px; background: linear-gradient(90deg, #fff, #b9c7ff 60%, #7fe3ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cert-ver { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.cert-line { height: 1px; margin: 18px 20px; background: linear-gradient(90deg, transparent, var(--line-strong), transparent); }
+.cert-text { margin: 0 0 16px; font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+.cert-text b { color: var(--text); }
+.cert-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; border-radius: 14px; overflow: hidden; background: var(--line); text-align: left; }
+.cert-grid div { background: #10141f; padding: 11px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cert-grid span { font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; color: var(--faint); }
+.cert-grid b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cert-grid b.mono { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 12.5px; }
+.cert-copy { margin-top: 16px; font-size: 12px; color: var(--faint); font-weight: 600; }
+.terms { font-size: 13px; line-height: 1.6; color: var(--muted); user-select: text; }
+.terms p { margin: 0 0 10px; }
+.terms b { color: var(--text); }
+.terms ol { margin: 0 0 12px; padding-left: 20px; }
+.terms li { margin-bottom: 6px; }
+.terms .muted { font-size: 12px; color: var(--faint); }
+
+/* ---------- Ayarlar altındaki bağlantılar ---------- */
+.link-list { margin-top: 22px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.link-list button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 13px 14px; text-align: left; font-size: 14.5px; font-weight: 650; }
+.link-list button + button { border-top: 1px solid var(--line); }
+.link-list button:active { background: var(--surface-3); }
+.link-list span:nth-child(2) { flex: 1; }
+.ll-ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-3); color: #9fb4ff; }
+.ll-ic svg { width: 17px; height: 17px; }
+.ll-chev { width: 8px; height: 8px; border-right: 2px solid var(--faint); border-top: 2px solid var(--faint); transform: rotate(45deg); margin-right: 4px; }
+.about { text-align: center; font-size: 11.5px; color: var(--faint); margin-top: 14px; }
+.foot-links { margin-top: 8px; display: flex; justify-content: center; gap: 8px; }
+.foot-links button { color: var(--muted); font-size: 12px; font-weight: 600; }

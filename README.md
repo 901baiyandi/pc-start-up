@@ -136,6 +136,11 @@ Steam dışı oyunlar için **Galeriden seç** ile kapak resmi ekleyebilirsin.
 - Güvenlik duvarı kuralı sadece **Özel** ağlarda açıktır; ajanı kesinlikle modemden internete açma (port yönlendirme yapma).
 - Anahtarı değiştirmek için `agent\config.json` içindeki `token` değerini silip ajanı yeniden başlat; yenisi üretilir.
 
+## Lisans
+
+© 2026 901baiyandi. **Tüm hakları saklıdır.** Kişisel kullanım lisansı — ayrıntılar için [`LICENSE`](LICENSE).
+Lisans sertifikası ve kurulum rehberi uygulamanın içinde de var: **⚙ Ayarlar → Lisans sertifikası / Kurulum rehberi**.
+
 ## Kaldırma
 `agent\uninstall_windows.bat` dosyasını çalıştır.
 

@@ -180,6 +180,15 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String appVersion() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
         public String broadcastAddress() {
             String b = wifiBroadcast();
             return b == null ? "" : b;

@@ -19,6 +19,8 @@
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
     image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>',
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
+    seal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="m9 14.2-1.5 7.3L12 19l4.5 2.5-1.5-7.3"/><path d="m9.5 9 1.7 1.7L14.5 7.5"/></svg>',
     radar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.1 4.9A10 10 0 1 0 22 12"/><path d="M16.2 7.8A6 6 0 1 0 18 12"/><circle cx="12" cy="12" r="2"/><path d="m13.4 10.6 6-6"/></svg>',
     wifi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a15 15 0 0 1 20 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/></svg>',
   };
@@ -431,8 +433,12 @@
     el.innerHTML = `
       <h3>Hoş geldin! Önce bilgisayarını bağla</h3>
       <p>Oyun bilgisayarına <b>agent</b> klasöründeki ajanı kur. Kurulum ekranında gördüğün <b>IP</b>, <b>MAC</b> ve <b>erişim anahtarını</b> buraya gir.</p>
-      <button class="btn primary" id="setupGo">${I.wifi}<span>Bilgisayarı bağla</span></button>`;
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn" id="setupGuide">${I.book}<span>Rehber</span></button>
+        <button class="btn primary" id="setupGo">${I.wifi}<span>Bağla</span></button>
+      </div>`;
     $("#setupGo").onclick = openSettings;
+    $("#setupGuide").onclick = openGuide;
   }
 
   function renderAll() {
@@ -852,6 +858,136 @@
   }
 
   // ------------------------------------------------------------------
+  // Kurulum rehberi, lisans sertifikası, hakkında
+  // ------------------------------------------------------------------
+  const OWNER = "901baiyandi";
+  const REPO_URL = "https://github.com/901baiyandi/pc-start-up";
+  const appVersion = () => { try { return (hasNative && window.Android.appVersion && window.Android.appVersion()) || "1.2"; } catch (e) { return "1.2"; } };
+  if (!db.installedAt) { db.installedAt = Date.now(); save(); }
+  if (!db.installId) { db.installId = "ARS-" + uid().toUpperCase().slice(0, 4) + "-" + uid().toUpperCase().slice(0, 4); save(); }
+  const fmtDate = (ts) => new Date(ts).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+
+  const GUIDE = [
+    { t: "Bilgisayarda BIOS ayarı", d: "Bilgisayar açılırken <b>Del</b> veya <b>F2</b> ile BIOS'a gir.", s: [
+      "<b>Wake on LAN</b> / <b>Power On By PCI-E</b> / <b>Resume by PCI-E Device</b> ayarını <b>Enabled</b> yap.",
+      "<b>ErP</b> ayarı varsa <b>Disabled</b> yap.",
+      "Kaydet ve çık (genelde <b>F10</b>).",
+    ] },
+    { t: "Ağ kartı ayarları (Windows)", d: "Uyandırma sinyalini ağ kartı yakalar.", s: [
+      "<b>Aygıt Yöneticisi</b> → <b>Ağ bağdaştırıcıları</b> → ethernet kartına sağ tık → <b>Özellikler</b>.",
+      "<b>Gelişmiş</b>: <b>Wake on Magic Packet</b> → Etkin. Varsa <b>Energy Efficient Ethernet</b> → Devre dışı.",
+      "<b>Güç Yönetimi</b>: \"Bu aygıtın bilgisayarı uyandırmasına izin ver\" ve \"Sadece sihirli paket…\" kutularını işaretle.",
+      "Bilgisayar <b>ethernet kablosuyla</b> bağlı olmalı; Wi-Fi ile uyandırma çoğu zaman çalışmaz.",
+    ] },
+    { t: "Hızlı başlatmayı kapat", d: "Açıkken bilgisayar tam kapanmaz ve uyandırma çalışmayabilir.", s: [
+      "<b>Denetim Masası</b> → <b>Güç Seçenekleri</b> → <b>Güç düğmelerinin yapacaklarını seçin</b>.",
+      "<b>Şu anda kullanılamayan ayarları değiştirin</b> → <b>Hızlı başlatmayı aç</b> kutusunu kaldır → Kaydet.",
+    ] },
+    { t: "Otomatik oturum açma", d: "Windows şifre ekranında beklerse oyun açılamaz.", s: [
+      "<b>Win + R</b> → <code>netplwiz</code> yaz → Enter.",
+      "\"Kullanıcılar bu bilgisayarı kullanmak için bir kullanıcı adı ve parola girmelidir\" kutusunu kaldır, şifreni gir.",
+      "Kutu görünmüyorsa: <b>Ayarlar → Hesaplar → Oturum açma seçenekleri</b> → \"Windows Hello oturum açmayı zorunlu kıl\" kapat.",
+    ] },
+    { t: "Ajanı kur", d: "Ajan, telefondan gelen komutları bilgisayarda çalıştıran küçük programdır.", s: [
+      "<a href=\"https://www.python.org/downloads/\">python.org</a>'dan Python'u kur; kurulumda <b>Add python.exe to PATH</b> kutusunu işaretle.",
+      "<a href=\"" + REPO_URL + "/archive/refs/heads/main.zip\">Arise dosyalarını indir</a>, içindeki <b>agent</b> klasörünü bilgisayarına kopyala (örn. <code>C:\\Arise\\agent</code>).",
+      "<b>install_windows.bat</b> dosyasına çift tıkla, yönetici iznini onayla.",
+      "Açılan pencerede yazan <b>token</b> (erişim anahtarı), <b>MacAddress</b> ve <b>IPAddress</b> bilgilerini not al.",
+      "Modem arayüzünden bilgisayara <b>sabit IP</b> (DHCP rezervasyonu) vermen önerilir.",
+    ] },
+    { t: "Uygulamayı bağla", d: "Telefon ve bilgisayar aynı Wi-Fi / modem ağında olmalı.", s: [
+      "Sağ üstteki <b>⚙</b> simgesine dokun.",
+      "IP adresi, MAC adresi ve erişim anahtarını gir.",
+      "Bilgisayar açıkken <b>Bağlantıyı test et</b> → <b>Kaydet</b>.",
+    ] },
+    { t: "Oyunları ekle ve oyna", d: "Arise oyunlarını kendisi bulabilir.", s: [
+      "Bilgisayar açıkken kütüphanedeki <b>Tara</b> düğmesine dokun; Steam, Epic, Riot ve masaüstü oyunların listelenir.",
+      "Eklemek istediklerini seç → <b>Ekle</b>. Kapaklar otomatik gelir.",
+      "Artık bir oyunun <b>▶</b> düğmesine dokunman yeterli: bilgisayar kapalıysa uyanır, açılır ve oyun başlar.",
+    ] },
+    { t: "Farklı internetten açmak (isteğe bağlı)", d: "Uyandırma sinyali internet üzerinden geçemez; bunun için:", s: [
+      "<b>Akıllı priz:</b> BIOS'ta <b>Restore on AC Power Loss → Power On</b> yap, bilgisayarı akıllı prize tak; prizi uzaktan aç.",
+      "<b>Tailscale:</b> Bilgisayara ve telefona Tailscale kur, ayarlara bilgisayarın <code>100.x.x.x</code> adresini gir. Oyun başlatma her yerden çalışır.",
+      "Modemde port yönlendirme yapma; güvenli değil.",
+    ] },
+  ];
+
+  const TROUBLE = [
+    ["Bilgisayar açılmıyor", "BIOS, ağ kartı ve hızlı başlatma ayarlarını kontrol et. Kablonun takılı olduğundan emin ol. Bilgisayarı fişten çekmek yerine Başlat → Kapat ile kapat."],
+    ["Açıldı ama oyun başlamadı", "Otomatik oturum açma kurulu mu? Ayarlardan \"Oyun öncesi bekleme\" süresini artır. Bilgisayardaki agent\\agent.log dosyasına bak."],
+    ["\"Anahtar hatalı\" uyarısı", "Uygulamadaki anahtar, bilgisayardaki agent\\config.json içindeki token ile aynı olmalı."],
+    ["Durum hep \"Kapalı\"", "Telefon aynı Wi-Fi'da mı? IP doğru mu? Misafir ağı cihazları birbirinden ayırır, kullanma."],
+    ["Tara: \"ajan eski sürüm\"", "agent klasörünü yeni sürümle değiştir ve install_windows.bat'ı tekrar çalıştır."],
+  ];
+
+  function openGuide() {
+    const b = openSheet(`
+      <h3>Kurulum rehberi</h3>
+      <p class="sub">Bilgisayar tarafı bir kere yapılır, yaklaşık 10 dakika sürer.</p>
+      <div class="guide">${GUIDE.map((g, i) => `
+        <details class="g-step"${i === 0 ? " open" : ""}>
+          <summary><span class="g-num">${i + 1}</span><span class="g-title">${esc(g.t)}</span><span class="g-chev"></span></summary>
+          <div class="g-body"><p>${g.d}</p><ol>${g.s.map((x) => `<li>${x}</li>`).join("")}</ol></div>
+        </details>`).join("")}
+      </div>
+      <div class="g-head">Sorun giderme</div>
+      <div class="guide">${TROUBLE.map(([q, a]) => `
+        <details class="g-step"><summary><span class="g-num q">?</span><span class="g-title">${esc(q)}</span><span class="g-chev"></span></summary>
+        <div class="g-body"><p>${esc(a)}</p></div></details>`).join("")}
+      </div>
+      <button class="btn primary" id="gDone" style="margin-top:16px">${configured() ? "Tamam" : "Bilgisayarı bağla"}</button>`);
+    $("#gDone", b).onclick = () => (configured() ? closeSheet() : openSettings());
+  }
+
+  function openLicense() {
+    const year = new Date().getFullYear();
+    const b = openSheet(`
+      <div class="cert">
+        <div class="cert-inner">
+          <div class="cert-seal"><div class="brand-mark"></div></div>
+          <div class="cert-kicker">LİSANS SERTİFİKASI</div>
+          <div class="cert-app">Arise</div>
+          <div class="cert-ver">Sürüm ${esc(appVersion())}</div>
+          <div class="cert-line"></div>
+          <p class="cert-text">Bu yazılım, telif hakkı sahibinin izniyle bu cihazda <b>kişisel kullanım</b> için lisanslanmıştır.</p>
+          <div class="cert-grid">
+            <div><span>Telif hakkı sahibi</span><b>${esc(OWNER)}</b></div>
+            <div><span>Lisans türü</span><b>Kişisel kullanım</b></div>
+            <div><span>Kurulum no</span><b class="mono">${esc(db.installId)}</b></div>
+            <div><span>Kurulum tarihi</span><b>${esc(fmtDate(db.installedAt))}</b></div>
+          </div>
+          <div class="cert-copy">© ${year} ${esc(OWNER)}. Tüm hakları saklıdır.</div>
+        </div>
+      </div>
+      <div class="g-head">Lisans koşulları</div>
+      <div class="terms">
+        <p>Arise ve tüm bileşenleri (Android uygulaması, bilgisayar ajanı, arayüz, simgeler ve belgeler) <b>${esc(OWNER)}</b>'nin mülkiyetindedir ve telif hakkı yasalarıyla korunur.</p>
+        <ol>
+          <li>Yazılımı kendi cihazlarında kişisel ve ticari olmayan amaçlarla kullanabilirsin.</li>
+          <li>Telif hakkı sahibinin yazılı izni olmadan yazılımın tamamı veya bir kısmı kopyalanamaz, değiştirilemez, dağıtılamaz, satılamaz, kiralanamaz veya yeniden yayınlanamaz.</li>
+          <li>Kaynak koduna tersine mühendislik uygulanması ve türev ürünlerin oluşturulması yasaktır.</li>
+          <li>Yazılım "olduğu gibi" sunulur; kullanımdan doğabilecek veri kaybı, donanım sorunu veya diğer zararlardan telif hakkı sahibi sorumlu tutulamaz.</li>
+          <li>Bu koşullara uyulmaması halinde kullanım hakkı kendiliğinden sona erer.</li>
+        </ol>
+        <p class="muted">Oyun adları, kapak görselleri ve logolar ilgili sahiplerine aittir ve Steam mağazasından gösterilir. Arise; Valve, Epic Games veya Riot Games ile bağlantılı değildir ve onlar tarafından onaylanmamıştır.</p>
+      </div>
+      <button class="btn" id="lOk" style="margin-top:16px">Kapat</button>`);
+    $("#lOk", b).onclick = closeSheet;
+  }
+
+  function aboutLinks() {
+    return `
+      <div class="link-list">
+        <button data-l="guide"><span class="ll-ic">${I.book}</span><span>Kurulum rehberi</span><span class="ll-chev"></span></button>
+        <button data-l="license"><span class="ll-ic">${I.seal}</span><span>Lisans sertifikası</span><span class="ll-chev"></span></button>
+      </div>
+      <div class="about">Arise ${esc(appVersion())} · © ${new Date().getFullYear()} ${esc(OWNER)} · Tüm hakları saklıdır</div>`;
+  }
+  function bindAboutLinks(root) {
+    root.querySelectorAll("[data-l]").forEach((x) => (x.onclick = () => (x.dataset.l === "guide" ? openGuide() : openLicense())));
+  }
+
+  // ------------------------------------------------------------------
   // Ayarlar
   // ------------------------------------------------------------------
   function openSettings() {
@@ -875,7 +1011,9 @@
       <div class="stack">
         <button class="btn" id="sTest">${I.wifi}<span>Bağlantıyı test et</span></button>
         <button class="btn primary" id="sSave">${I.check}<span>Kaydet</span></button>
-      </div>`);
+      </div>
+      ${aboutLinks()}`);
+    bindAboutLinks(b);
     const f = (id) => $("#" + id, b);
     f("sIp").value = s.ip; f("sPort").value = s.port || 5757; f("sMac").value = s.mac; f("sToken").value = s.token;
     f("sBoot").value = s.bootTimeout; f("sSettle").value = s.settleDelay; f("sBc").value = s.broadcast || "";
@@ -1102,6 +1240,8 @@
   $("#addGameBtn").onclick = () => openGameEditor();
   $("#scanBtn").innerHTML = I.radar + "<span>Tara</span>";
   $("#scanBtn").onclick = () => openScan();
+  $("#footGuide").onclick = openGuide;
+  $("#footLicense").onclick = openLicense;
   $("#scrim").onclick = closeSheet;
 
   if (DEMO && !configured()) {
