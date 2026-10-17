@@ -1,4 +1,6 @@
-# PC Start-Up 🎮
+# Arise ⚡🎮
+
+> Tek dokunuş, oyun başlasın.
 
 Telefondan **tek tuşla** oyun bilgisayarını uzaktan açıp istediğin oyunu otomatik başlatan Android uygulaması.
 
@@ -17,6 +19,9 @@ Telefondan **tek tuşla** oyun bilgisayarını uzaktan açıp istediğin oyunu o
 **Özellikler**
 - Oyun kapaklı, koyu temalı, konsol tarzı arayüz (Steam kapakları otomatik gelir)
 - **OYNA**'ya bas → PC kapalıysa uyandırır → açılmasını bekler → oyunu başlatır
+- **Oyunları kendisi bulur:** Steam, Epic Games, Riot ve masaüstü / görev çubuğu kısayollarını tarar
+- Bilgisayar açıldığında yeni kurulan oyunları fark edip haber verir
+- Steam dışı oyunların kapaklarını Steam'de isimle eşleştirerek bulur
 - Steam'de isimle oyun arama ve tek dokunuşla ekleme
 - Steam, Epic Games, Riot (VALORANT / LoL), herhangi bir `.exe` veya bağlantı desteği
 - Kendi kapak resmini galeriden seçme
@@ -28,8 +33,9 @@ Telefondan **tek tuşla** oyun bilgisayarını uzaktan açıp istediğin oyunu o
 
 ## 1. Telefona kurulum
 
-1. Telefonda [`release/PCStartUp.apk`](release/PCStartUp.apk) dosyasını indir
-   (GitHub'da dosyaya gir → **Download raw file**). Depo özelse GitHub hesabınla giriş yapman gerekir.
+1. Telefonda en son APK'yı indir:
+   **https://github.com/901baiyandi/pc-start-up/releases/download/apk-latest/Arise.apk**
+   (veya depodaki [`release/Arise.apk`](release/Arise.apk)).
 2. Dosyayı aç. Android "bilinmeyen kaynaklara izin ver" diye sorarsa tarayıcına/dosya yöneticine izin ver.
 3. Play Protect uyarısı çıkarsa **Yine de yükle**'ye dokun (uygulama Play Store'da olmadığı için normaldir).
 
@@ -60,7 +66,7 @@ kutusunu kaldır → şifreni gir.
 
 ### e) Ajanı kur
 1. [Python](https://www.python.org/downloads/)'u kur — kurulumda **"Add python.exe to PATH"** kutusunu işaretle.
-2. Bu depodaki **`agent`** klasörünü bilgisayarına kopyala (örn. `C:\PCStartUp\agent`).
+2. Bu depodaki **`agent`** klasörünü bilgisayarına kopyala (örn. `C:\Arise\agent`).
 3. **`install_windows.bat`** dosyasına çift tıkla (yönetici izni ister). Bu betik:
    - Güvenlik duvarında 5757 portunu açar
    - Ajanı Windows açılışında otomatik başlatır
@@ -87,12 +93,28 @@ Uygulamayı aç → **Bilgisayarı bağla** (veya sağ üstteki ⚙):
 
 ## 4. Oyun ekleme
 
+### Otomatik (önerilen)
+Bilgisayar açıkken kütüphanedeki **Tara** düğmesine bas. Ajan şunları tarar:
+
+| Kaynak | Nereden okunur |
+|---|---|
+| Steam | Tüm Steam kütüphane klasörlerindeki kurulu oyunlar (`libraryfolders.vdf`, `appmanifest_*.acf`) |
+| Epic Games | `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests` |
+| Riot Games | VALORANT ve League of Legends kuruluysa |
+| Masaüstü / görev çubuğu | `.lnk` ve `.url` kısayolları (tarayıcı, Discord gibi oyun olmayanlar elenir) |
+
+Eklemek istediklerini seç → **Ekle**. Steam dışı oyunların kapakları Steam mağazasında isimle eşleştirilerek
+otomatik bulunur. Bilgisayar her açıldığında yeni kurulan oyunlar kütüphanenin üstünde
+**"N yeni oyun bulundu"** olarak gösterilir.
+
+### Elle
 **+ Ekle** →
 - **Steam:** Oyun adını yaz → **Ara** → kapağa dokun. Kapak resmi otomatik gelir.
 - **Epic:** Oyunun AppName değeri (Fortnite için `Fortnite`).
 - **Riot:** VALORANT veya League of Legends seç.
 - **.exe:** Oyunun bilgisayardaki tam yolu, örn. `C:\Games\Minecraft\Launcher.exe`.
 - **Bağlantı:** `battlenet://`, `uplay://` gibi bir başlatma adresi.
+- **Kısayol:** Bilgisayardaki bir `.lnk` / `.url` dosyasının yolu.
 
 Steam dışı oyunlar için **Galeriden seç** ile kapak resmi ekleyebilirsin.
 
@@ -104,6 +126,7 @@ Steam dışı oyunlar için **Galeriden seç** ile kapak resmi ekleyebilirsin.
 |---|---|
 | "Bilgisayar açılmadı" | BIOS WoL / ErP, ağ kartı ayarları, hızlı başlatma ve ethernet kablosunu kontrol et. PC'yi bir kez normal açıp **Başlat → Kapat** ile kapat (fişten çekilirse bazı kartlar WoL'u unutur). |
 | PC açıldı ama oyun başlamadı | Otomatik oturum açma kurulu mu? `agent\agent.log` dosyasına bak. "Oyun öncesi bekleme"yi artır. |
+| Tara: "ajan eski sürüm" | `agent` klasörünü bu depodaki yeni sürümle değiştirip `install_windows.bat`'ı tekrar çalıştır. |
 | "Anahtar hatalı" | Uygulamadaki anahtar `agent\config.json` içindeki `token` ile aynı olmalı. |
 | Durum hep "Kapalı" | Telefon aynı Wi-Fi'da mı? IP doğru mu? Misafir ağı (guest Wi-Fi) cihazları birbirinden ayırır, kullanma. |
 
@@ -122,19 +145,20 @@ Steam dışı oyunlar için **Galeriden seç** ile kapak resmi ekleyebilirsin.
 
 ```
 agent/                 Oyun bilgisayarında çalışan ajan (Python, sadece standart kütüphane)
-  agent.py             HTTP API: GET /status, POST /launch, POST /power  (port 5757)
+  agent.py             HTTP API: GET /status, GET /games, POST /launch, POST /power  (port 5757)
+  scanner.py           Kurulu oyunları bulan tarayıcı (Steam / Epic / Riot / kısayollar)
   install_windows.bat  Güvenlik duvarı + otomatik başlatma kurulumu
 android/               Android uygulaması
   src/…/MainActivity.java   WebView + yerel köprü (Wake-on-LAN, HTTP)
   assets/www/          Arayüz (HTML/CSS/JS)
   build.sh             Gradle'sız APK derleme betiği
-release/PCStartUp.apk  Hazır derlenmiş APK
+release/Arise.apk   Hazır derlenmiş APK
 ```
 
 **APK derleme** (Ubuntu/Debian):
 ```bash
 sudo apt-get install -y openjdk-17-jdk aapt apksigner zipalign android-sdk-platform-23 dalvik-exchange
-./android/build.sh        # -> android/build/PCStartUp.apk
+./android/build.sh        # -> android/build/Arise.apk
 ```
 `android/` klasöründe yapılan her değişiklikte GitHub Actions APK'yı otomatik derler; `main` dalında
 **Releases** sayfasına da yükler.

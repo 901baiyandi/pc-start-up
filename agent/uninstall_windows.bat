@@ -6,7 +6,9 @@ if %errorlevel% neq 0 (
     exit /b
 )
 del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\PC Start-Up Ajan.lnk" >nul 2>&1
+del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\Arise Ajan.lnk" >nul 2>&1
 netsh advfirewall firewall delete rule name="PC Start-Up Ajan" >nul 2>&1
+netsh advfirewall firewall delete rule name="Arise Ajan" >nul 2>&1
 powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='pythonw.exe'\" | Where-Object { $_.CommandLine -like '*agent.py*' } | Invoke-CimMethod -MethodName Terminate | Out-Null"
 echo Ajan kaldirildi.
 pause

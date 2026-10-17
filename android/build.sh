@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# PC Start-Up Android APK derleme betiği (Gradle gerektirmez).
+# Arise Android APK derleme betiği (Gradle gerektirmez).
 #
 # Ubuntu/Debian'da gerekli paketler:
 #   sudo apt-get install -y openjdk-17-jdk aapt apksigner zipalign \
 #        android-sdk-platform-23 dalvik-exchange
 #
-# Kullanım:  ./build.sh            -> build/PCStartUp.apk
+# Kullanım:  ./build.sh            -> build/Arise.apk
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -14,7 +14,7 @@ DX="${DX:-dalvik-exchange}"
 KEYSTORE="${KEYSTORE:-signing/pcstartup.keystore}"
 KS_PASS="${KS_PASS:-pcstartup}"
 OUT=build
-APK_NAME=PCStartUp.apk
+APK_NAME=Arise.apk
 
 rm -rf "$OUT" && mkdir -p "$OUT/gen" "$OUT/classes" "$OUT/dex"
 

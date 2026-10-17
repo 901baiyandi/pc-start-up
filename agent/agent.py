@@ -1,5 +1,5 @@
 """
-PC Start-Up — Ajan (oyun bilgisayarında çalışır)
+Arise — Ajan (oyun bilgisayarında çalışır)
 
 Bilgisayar açıldığında arka planda çalışır ve telefondaki uygulamadan gelen
 "şu oyunu başlat" komutlarını dinler. Sadece Python standart kütüphanesi kullanır.
@@ -19,10 +19,13 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import scanner
+
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "config.json"
 LOG_PATH = BASE_DIR / "agent.log"
 START_TIME = time.time()
+VERSION = 2
 IS_WINDOWS = platform.system() == "Windows"
 
 
@@ -92,6 +95,13 @@ def launch(game):
         open_uri(f"com.epicgames.launcher://apps/{value}?action=launch&silent=true")
     elif kind == "uri":
         open_uri(value)
+    elif kind == "shortcut":
+        lnk = Path(os.path.expandvars(value))
+        if lnk.suffix.lower() not in (".lnk", ".url", ".exe"):
+            raise ValueError("Kısayol .lnk, .url veya .exe olmalı")
+        if not lnk.exists():
+            raise ValueError(f"Kısayol bulunamadı: {lnk}")
+        open_uri(str(lnk))
     elif kind == "exe":
         exe = Path(os.path.expandvars(value))
         if not exe.exists():
@@ -127,7 +137,7 @@ def power(action):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "PCStartUpAgent/1.0"
+    server_version = "AriseAgent/2.0"
 
     def log_message(self, fmt, *args):
         pass
@@ -160,7 +170,14 @@ class Handler(BaseHTTPRequestHandler):
                 "os": f"{platform.system()} {platform.release()}",
                 "uptime": int(time.time() - START_TIME),
                 "authorized": self._authorized(),
+                "version": VERSION,
             })
+        if self.path == "/games":
+            if not self._authorized():
+                return self._send(401, {"ok": False, "error": "Erişim anahtarı hatalı"})
+            games = scanner.scan_all()
+            log(f"Oyun taraması: {len(games)} oyun bulundu")
+            return self._send(200, {"ok": True, "games": games})
         self._send(404, {"ok": False, "error": "Bulunamadı"})
 
     def do_POST(self):

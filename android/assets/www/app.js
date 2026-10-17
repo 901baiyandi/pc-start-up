@@ -1,4 +1,4 @@
-/* PC Start-Up — telefon arayüzü */
+/* Arise — telefon arayüzü */
 (function () {
   "use strict";
 
@@ -19,6 +19,7 @@
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
     image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>',
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+    radar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.1 4.9A10 10 0 1 0 22 12"/><path d="M16.2 7.8A6 6 0 1 0 18 12"/><circle cx="12" cy="12" r="2"/><path d="m13.4 10.6 6-6"/></svg>',
     wifi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a15 15 0 0 1 20 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/></svg>',
   };
 
@@ -79,6 +80,17 @@
       }
       if (!demoPc.on) return res({ status: 0, body: "timeout" });
       if (url.endsWith("/status")) return res({ status: 200, body: JSON.stringify({ ok: true, hostname: "OYUN-PC", authorized: true, uptime: 42 }) });
+      if (url.endsWith("/games")) {
+        const games = [
+          { name: "Counter-Strike 2", type: "steam", value: "730", source: "Steam" },
+          { name: "Baldur's Gate 3", type: "steam", value: "1086940", source: "Steam" },
+          { name: "Hollow Knight", type: "steam", value: "367520", source: "Steam" },
+          { name: "Fortnite", type: "epic", value: "fn%3Aabc%3AFortnite", source: "Epic Games" },
+          { name: "VALORANT", type: "exe", value: "C:/Riot Games/Riot Client/RiotClientServices.exe", args: "--launch-product=valorant --launch-patchline=live", source: "Riot Games" },
+          { name: "Minecraft Launcher", type: "shortcut", value: "C:\\Users\\Ben\\Desktop\\Minecraft Launcher.lnk", source: "Masaüstü" },
+        ];
+        return res({ status: 200, body: JSON.stringify({ ok: true, games }) });
+      }
       if (url.endsWith("/power")) { demoPc.on = false; return res({ status: 200, body: '{"ok":true}' }); }
       res({ status: 200, body: '{"ok":true}' });
     }, 350));
@@ -104,6 +116,7 @@
     riot: { label: "Riot", hint: "" },
     exe: { label: ".exe", hint: "Dosya yolu" },
     uri: { label: "Bağlantı", hint: "URI" },
+    shortcut: { label: "Kısayol", hint: "Kısayol yolu" },
   };
   const RIOT = {
     valorant: { name: "VALORANT", args: "--launch-product=valorant --launch-patchline=live" },
@@ -144,19 +157,66 @@
     "https://steamcdn-a.akamaihd.net/steam/apps/",
   ];
   const steamImgs = (id, files) => files.flatMap((f) => STEAM_HOSTS.map((h) => h + id + "/" + f));
+  // Resimler için kullanılan Steam AppID: Steam oyunlarında kendisi, diğerlerinde isimle eşleşen oyun
+  const artId = (g) => (g.type === "steam" ? g.value : g.art);
   function coverSources(g) {
     if (g.cover) return [g.cover];
-    if (g.type === "steam") return steamImgs(g.value, ["library_600x900_2x.jpg", "library_600x900.jpg"]);
+    if (artId(g)) return steamImgs(artId(g), ["library_600x900_2x.jpg", "library_600x900.jpg"]);
     return [];
   }
   function heroSources(g) {
     if (g.hero) return [g.hero];
-    if (g.type === "steam") return steamImgs(g.value, ["library_hero.jpg", "header.jpg"]);
+    if (artId(g)) return steamImgs(artId(g), ["library_hero.jpg", "header.jpg"]);
     return g.cover ? [g.cover] : [];
   }
   function logoSources(g) {
-    if (g.type === "steam" && !g.hero) return steamImgs(g.value, ["logo.png"]);
+    if (artId(g) && !g.hero) return steamImgs(artId(g), ["logo.png"]);
     return [];
+  }
+
+  // ------------------------------------------------------------------
+  // İsimle Steam'de kapak bulma
+  // ------------------------------------------------------------------
+  const normName = (s) => String(s || "").toLowerCase().replace(/[™®©]/g, "").replace(/[^0-9a-zçğıöşü]+/g, "");
+  async function steamSearch(term) {
+    const r = await Native.request("GET", "https://store.steampowered.com/api/storesearch/?l=turkish&cc=TR&term=" + encodeURIComponent(term), { timeout: 8000 });
+    try { return { ok: true, items: JSON.parse(r.body).items || [] }; } catch (e) { return { ok: !!r.status, items: [] }; }
+  }
+  /** Oyun adına en iyi uyan Steam AppID'yi bulur (bulamazsa null). Sonuçlar önbelleğe alınır. */
+  async function matchArt(name) {
+    const key = normName(name);
+    if (!key) return null;
+    db.artCache = db.artCache || {};
+    if (key in db.artCache) return db.artCache[key];
+    const res = await steamSearch(name.replace(/launcher$/i, "").trim());
+    if (!res.ok) return null; // internet yoksa önbelleğe yazma, sonra tekrar dene
+    let best = null;
+    for (const it of res.items) {
+      const n = normName(it.name);
+      if (n === key) { best = it; break; }
+      if (!best && n && (n.startsWith(key) || key.startsWith(n)) && Math.min(n.length, key.length) / Math.max(n.length, key.length) > 0.6) best = it;
+    }
+    db.artCache[key] = best ? String(best.id) : null;
+    save();
+    return db.artCache[key];
+  }
+  /** Kapağı olmayan Steam dışı oyunlara sırayla kapak bulur. */
+  let artQueueBusy = false;
+  async function fillMissingArt() {
+    if (artQueueBusy) return;
+    artQueueBusy = true;
+    try {
+      for (const g of db.games.slice()) {
+        if (g.type === "steam" || g.cover || g.art !== undefined) continue;
+        const id = await matchArt(g.name);
+        if (id === undefined) continue;
+        const live = db.games.find((x) => x.id === g.id);
+        if (!live) continue;
+        live.art = id;
+        save();
+        if (id) { renderGrid(); renderHero(); }
+      }
+    } finally { artQueueBusy = false; }
   }
 
   function hue(str) { let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % 360; }
@@ -214,6 +274,7 @@
   }
   function platformLabel(g) {
     if (g.type === "exe" && /Riot/i.test(g.value)) return "Riot";
+    if (g.type === "shortcut" && g.source) return g.source;
     return (PLATFORMS[g.type] || {}).label || g.type;
   }
   function relTime(ts) {
@@ -248,9 +309,11 @@
 
   async function refreshStatus() {
     const res = await checkStatus();
+    const wasOnline = pc.state === "online";
     pc.state = res.state;
     if (res.info) pc.info = res.info;
     renderStatus();
+    if (pc.state === "online" && (!wasOnline || Date.now() - (db.lastScan || 0) > 30 * 60000)) autoDetect();
   }
 
   function renderStatus() {
@@ -474,7 +537,7 @@
   // ------------------------------------------------------------------
   function openGameEditor(existing) {
     const g = existing ? Object.assign({}, existing) : { id: uid(), name: "", type: "steam", value: "", args: "" };
-    let tab = g.type === "exe" && g.value === RIOT_EXE ? "riot" : g.type;
+    let tab = g.type === "exe" && /Riot/i.test(g.value) && /--launch-product/.test(g.args || "") ? "riot" : g.type;
     const b = openSheet(`
       <h3>${existing ? "Oyunu düzenle" : "Oyun ekle"}</h3>
       <p class="sub">Steam oyunlarının kapak resimleri otomatik gelir. Diğerleri için galeriden resim seçebilirsin.</p>
@@ -507,6 +570,7 @@
         epic: g.value ? "Epic Games: " + g.value : "Uygulama adını gir",
         exe: g.value || "Dosya yolunu gir",
         uri: g.value || "Bağlantıyı gir",
+        shortcut: g.value || "Kısayol yolunu gir",
       }[g.type];
       meta.innerHTML = `<div class="p-name"></div><div class="p-meta"></div>`;
       $(".p-name", meta).textContent = shown.name;
@@ -536,7 +600,7 @@
           ${Object.keys(RIOT).map((k) => `<button data-r="${k}">${RIOT[k].name}</button>`).join("")}</div>
           <div class="hint">Riot Client varsayılan konumda olmalı: C:\\Riot Games\\Riot Client</div></div>`;
         const pick = (k) => {
-          g.type = "exe"; g.value = RIOT_EXE; g.args = RIOT[k].args;
+          g.type = "exe"; g.value = /Riot/i.test(g.value || "") ? g.value : RIOT_EXE; g.args = RIOT[k].args;
           if (!fName.value || Object.values(RIOT).some((r) => r.name === fName.value)) fName.value = RIOT[k].name;
           tf.querySelectorAll("[data-r]").forEach((x) => x.classList.toggle("on", x.dataset.r === k));
           updatePreview();
@@ -547,6 +611,9 @@
         tf.innerHTML = `
           <div class="field"><label>Oyunun .exe yolu (bilgisayarda)</label><input class="input mono" id="fValue" placeholder="C:\\Games\\Oyun\\oyun.exe"></div>
           <div class="field"><label>Başlatma parametreleri (isteğe bağlı)</label><input class="input mono" id="fArgs" placeholder="-fullscreen"></div>`;
+      } else if (tab === "shortcut") {
+        tf.innerHTML = `<div class="field"><label>Kısayol dosyası (bilgisayarda)</label><input class="input mono" id="fValue" placeholder="C:\\Users\\Ben\\Desktop\\Oyun.lnk">
+          <div class="hint">.lnk, .url veya .exe dosyası. "Bilgisayarı tara" ile masaüstündeki kısayollar otomatik bulunur.</div></div>`;
       } else {
         tf.innerHTML = `<div class="field"><label>Başlatma bağlantısı</label><input class="input mono" id="fValue" placeholder="örn. battlenet://Pro">
           <div class="hint">Bilgisayarda çift tıklanınca oyunu açan herhangi bir protokol bağlantısı.</div></div>`;
@@ -612,9 +679,10 @@
       if (!g.name) return toast("Oyun adını gir", "bad");
       if (g.cover && !g.cover.startsWith("data:")) g.hero = g.cover;
       if (!g.cover) delete g.hero;
+      if (g.type === "steam" || (existing && existing.name !== g.name)) delete g.art;
       if (existing) db.games = db.games.map((x) => (x.id === g.id ? g : x));
       else db.games.unshift(g);
-      save(); closeSheet(); renderAll();
+      save(); closeSheet(); renderAll(); fillMissingArt();
       toast(existing ? "Kaydedildi" : g.name + " kütüphaneye eklendi", "ok");
     };
     renderTypeFields();
@@ -646,6 +714,141 @@
       };
       inp.click();
     });
+  }
+
+  // ------------------------------------------------------------------
+  // Bilgisayardaki oyunları otomatik bulma
+  // ------------------------------------------------------------------
+  const gameKey = (g) => [g.type, String(g.value || "").toLowerCase(), g.args || ""].join("|");
+  function inLibrary(f) {
+    const k = gameKey(f), n = normName(f.name);
+    return db.games.some((g) => gameKey(g) === k || normName(g.name) === n);
+  }
+
+  async function fetchPcGames() {
+    const r = await Native.request("GET", agentUrl("/games"), { headers: { "X-Agent-Token": S().token }, timeout: 20000 });
+    if (r.status === 404) return { error: "Bilgisayardaki ajan eski sürüm. agent klasörünü güncelleyip install_windows.bat'ı tekrar çalıştır." };
+    if (r.status !== 200) return { error: errText(r) };
+    try { return { games: JSON.parse(r.body).games || [] }; } catch (e) { return { error: "Geçersiz cevap" }; }
+  }
+
+  /** Bilgisayar açıldığında sessizce tarar; yeni oyun varsa kütüphanenin üstünde haber verir. */
+  async function autoDetect() {
+    if (autoDetect.busy || launchJob) return;
+    autoDetect.busy = true;
+    try {
+      const res = await fetchPcGames();
+      if (!res.games) return;
+      db.lastScan = Date.now();
+      db.ignored = db.ignored || [];
+      const fresh = res.games.filter((f) => !inLibrary(f) && !db.ignored.includes(gameKey(f)));
+      save();
+      renderNewGames(fresh, res.games);
+    } finally { autoDetect.busy = false; }
+  }
+
+  function renderNewGames(fresh, all) {
+    const el = $("#newGames");
+    if (!fresh.length) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = `
+      <div class="ng-covers"></div>
+      <div class="ng-text"><b>${fresh.length} yeni oyun bulundu</b><span>Bilgisayarında kurulu, kütüphanende yok</span></div>
+      <button class="pill-btn ng-go">Göster</button>
+      <button class="ng-x" aria-label="Gizle">${I.x}</button>`;
+    const covers = $(".ng-covers", el);
+    fresh.slice(0, 3).forEach((g) => covers.appendChild(coverEl(g)));
+    $(".ng-go", el).onclick = () => openScan(all);
+    $(".ng-x", el).onclick = () => {
+      db.ignored = (db.ignored || []).concat(fresh.map(gameKey));
+      save(); el.hidden = true;
+      toast("Bu oyunlar bir daha önerilmeyecek");
+    };
+  }
+
+  async function openScan(prefetched) {
+    if (!configured()) return openSettings();
+    const b = openSheet(`
+      <h3>Bilgisayardaki oyunlar</h3>
+      <p class="sub">Steam, Epic Games, Riot ve masaüstü / görev çubuğu kısayolları tarandı. Eklemek istediklerini seç.</p>
+      <div id="scanBody"><div class="spinner"></div><div class="empty-note">Bilgisayar taranıyor…</div></div>`);
+    let games = prefetched;
+    if (!games) {
+      if (pc.state !== "online") {
+        const st = await checkStatus(2500);
+        if (st.state !== "online") {
+          $("#scanBody", b).innerHTML = `<div class="empty-note">Bilgisayar kapalı görünüyor. Taramak için önce bilgisayarı aç.</div>
+            <button class="btn primary" id="scanWake">${I.bolt}<span>Bilgisayarı uyandır</span></button>`;
+          $("#scanWake", b).onclick = () => { closeSheet(); powerAction("wake"); };
+          return;
+        }
+      }
+      const res = await fetchPcGames();
+      if (!sheetOpen() || !$("#scanBody", b)) return;
+      if (res.error) { $("#scanBody", b).innerHTML = `<div class="empty-note"></div>`; $(".empty-note", b).textContent = res.error; return; }
+      games = res.games;
+      db.lastScan = Date.now(); save();
+    }
+    const body = $("#scanBody", b);
+    if (!games.length) { body.innerHTML = `<div class="empty-note">Hiç oyun bulunamadı.</div>`; return; }
+
+    const items = games.map((f) => ({ f, added: inLibrary(f), on: !inLibrary(f) }));
+    const groups = {};
+    items.forEach((it) => (groups[it.f.source || "Diğer"] = groups[it.f.source || "Diğer"] || []).push(it));
+    body.innerHTML = `<div class="scan-tools"><span id="scanCount"></span><button class="mini-link" id="scanAll">Tümünü seç</button></div><div id="scanList"></div>
+      <div class="sheet-cta"><button class="btn primary" id="scanAdd"></button></div>`;
+    const list = $("#scanList", body);
+    const pendingArt = [];
+    Object.keys(groups).forEach((src) => {
+      list.insertAdjacentHTML("beforeend", `<div class="scan-group">${esc(src.toLocaleUpperCase("en-US"))} <span>${groups[src].length}</span></div>`);
+      groups[src].forEach((it) => {
+        const row = document.createElement("button");
+        row.className = "scan-row" + (it.added ? " added" : "");
+        const thumb = document.createElement("div");
+        thumb.className = "scan-thumb";
+        const draw = () => { thumb.innerHTML = ""; thumb.appendChild(coverEl(Object.assign({}, it.f, { art: it.art }))); };
+        draw();
+        row.appendChild(thumb);
+        row.insertAdjacentHTML("beforeend", `<div class="scan-info"><div class="scan-name"></div><div class="scan-meta"></div></div><span class="check">${I.check}</span>`);
+        $(".scan-name", row).textContent = it.f.name;
+        $(".scan-meta", row).textContent = it.added ? "Kütüphanede var" : platformLabel(it.f);
+        const sync = () => row.classList.toggle("on", it.on);
+        sync();
+        row.onclick = () => { if (it.added) return; it.on = !it.on; sync(); update(); Native.haptic(); };
+        list.appendChild(row);
+        if (it.f.type !== "steam") pendingArt.push(async () => { it.art = await matchArt(it.f.name); if (it.art) draw(); });
+      });
+    });
+    const update = () => {
+      const n = items.filter((it) => it.on).length;
+      $("#scanCount", body).textContent = items.filter((it) => !it.added).length + " yeni · " + items.filter((it) => it.added).length + " ekli";
+      const btn = $("#scanAdd", body);
+      btn.innerHTML = `${I.plus}<span>${n ? n + " oyunu ekle" : "Oyun seç"}</span>`;
+      btn.disabled = !n;
+    };
+    update();
+    const flat = Object.keys(groups).flatMap((k) => groups[k]);
+    $("#scanAll", body).onclick = () => {
+      const all = flat.filter((it) => !it.added).every((it) => it.on);
+      flat.forEach((it) => { if (!it.added) it.on = !all; });
+      list.querySelectorAll(".scan-row").forEach((row, i) => row.classList.toggle("on", flat[i].on));
+      update();
+    };
+    $("#scanAdd", body).onclick = () => {
+      const chosen = flat.filter((it) => it.on);
+      chosen.reverse().forEach((it) => {
+        const g = { id: uid(), name: it.f.name, type: it.f.type, value: it.f.value, args: it.f.args || "" };
+        if (it.f.type === "shortcut") g.source = it.f.source;
+        if (it.art !== undefined) g.art = it.art;
+        db.games.unshift(g);
+      });
+      db.ignored = (db.ignored || []).filter((k) => !chosen.some((it) => gameKey(it.f) === k));
+      save(); closeSheet(); renderAll(); $("#newGames").hidden = true;
+      toast(chosen.length + " oyun kütüphaneye eklendi", "ok");
+      fillMissingArt();
+    };
+    // Steam dışı oyunlar için kapakları sırayla bul
+    (async () => { for (const job of pendingArt) { if (!sheetOpen()) break; await job(); } })();
   }
 
   // ------------------------------------------------------------------
@@ -897,6 +1100,8 @@
   $("#statusChip").onclick = () => (configured() ? (toast("Durum yenileniyor…"), refreshStatus()) : openSettings());
   $("#addGameBtn").innerHTML = I.plus + "<span>Ekle</span>";
   $("#addGameBtn").onclick = () => openGameEditor();
+  $("#scanBtn").innerHTML = I.radar + "<span>Tara</span>";
+  $("#scanBtn").onclick = () => openScan();
   $("#scrim").onclick = closeSheet;
 
   if (DEMO && !configured()) {
@@ -905,4 +1110,5 @@
   if (!configured()) pc.state = "unset";
   renderAll();
   startPolling();
+  fillMissingArt();
 })();

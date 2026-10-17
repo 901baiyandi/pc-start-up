@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title PC Start-Up Ajan Kurulumu
+title Arise Ajan Kurulumu
 
 :: Yonetici izni kontrolu (guvenlik duvari kurali icin gerekli)
 net session >nul 2>&1
@@ -22,11 +22,13 @@ if %errorlevel% neq 0 (
 
 echo [1/3] Guvenlik duvari kurali ekleniyor (TCP 5757)...
 netsh advfirewall firewall delete rule name="PC Start-Up Ajan" >nul 2>&1
-netsh advfirewall firewall add rule name="PC Start-Up Ajan" dir=in action=allow protocol=TCP localport=5757 profile=private,domain >nul
+netsh advfirewall firewall delete rule name="Arise Ajan" >nul 2>&1
+del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\PC Start-Up Ajan.lnk" >nul 2>&1
+netsh advfirewall firewall add rule name="Arise Ajan" dir=in action=allow protocol=TCP localport=5757 profile=private,domain >nul
 
 echo [2/3] Windows acilisinda otomatik baslatma ayarlaniyor...
 powershell -NoProfile -Command ^
-  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('Startup')+'\PC Start-Up Ajan.lnk');" ^
+  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('Startup')+'\Arise Ajan.lnk');" ^
   "$s.TargetPath=(Get-Command pythonw).Source;" ^
   "$s.Arguments='\"%~dp0agent.py\"';" ^
   "$s.WorkingDirectory='%~dp0';" ^

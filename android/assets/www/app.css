@@ -362,3 +362,54 @@ main { padding: 4px 16px calc(28px + env(safe-area-inset-bottom)); }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast.bad { border-color: rgba(255, 84, 112, 0.4); }
 .toast.ok { border-color: rgba(34, 211, 154, 0.4); }
+
+/* ---------- Oyun tarama ---------- */
+.head-actions { display: flex; gap: 8px; }
+.pill-btn[disabled], .btn[disabled] { opacity: 0.45; pointer-events: none; }
+
+.new-games {
+  display: flex; align-items: center; gap: 12px;
+  margin: -2px 0 16px; padding: 12px 10px 12px 12px; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.2), rgba(0, 194, 255, 0.1)), var(--surface);
+  border: 1px solid rgba(124, 92, 255, 0.35);
+  animation: rise 0.4s both;
+}
+.ng-covers { display: flex; flex: none; }
+.ng-covers .cover { width: 30px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6); }
+.ng-covers .cover + .cover { margin-left: -12px; }
+.ng-covers .placeholder { font-size: 0; }
+.ng-covers .placeholder .initials { display: none; }
+.ng-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ng-text b { font-size: 14px; }
+.ng-text span { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ng-x { width: 28px; height: 28px; display: grid; place-items: center; color: var(--faint); flex: none; }
+.ng-x svg { width: 13px; height: 13px; }
+
+.scan-tools { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 12.5px; color: var(--muted); }
+.scan-tools .mini-link { margin: 0; }
+.scan-group { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--faint); margin: 16px 0 8px; }
+.scan-group span { color: var(--muted); margin-left: 4px; }
+.scan-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 8px; margin-bottom: 6px; border-radius: 14px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  transition: border-color 0.15s, background 0.15s;
+}
+.scan-row.on { border-color: rgba(124, 92, 255, 0.6); background: linear-gradient(135deg, rgba(124, 92, 255, 0.14), rgba(0, 194, 255, 0.06)), var(--surface-2); }
+.scan-row.added { opacity: 0.5; }
+.scan-thumb { width: 42px; flex: none; }
+.scan-thumb .cover { border-radius: 8px; }
+.scan-thumb .placeholder { font-size: 0; padding: 0; }
+.scan-thumb .placeholder .initials { font-size: 15px; opacity: 0.6; top: auto; bottom: 6px; right: 0; left: 0; text-align: center; }
+.scan-info { flex: 1; min-width: 0; }
+.scan-name { font-size: 14.5px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scan-meta { font-size: 12px; color: var(--faint); margin-top: 3px; }
+.scan-row .check {
+  width: 26px; height: 26px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; border: 2px solid var(--line-strong); color: transparent;
+  transition: all 0.15s;
+}
+.scan-row .check svg { width: 13px; height: 13px; }
+.scan-row.on .check { background: var(--grad); border-color: transparent; color: #fff; }
+.scan-row.added .check { border-style: dashed; }
+.sheet-cta { position: sticky; bottom: calc(-22px - env(safe-area-inset-bottom)); margin: 14px -18px 0; padding: 12px 18px calc(22px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--surface) 75%, transparent); }

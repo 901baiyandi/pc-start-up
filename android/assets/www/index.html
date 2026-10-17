@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#07090f">
-  <title>PC Start-Up</title>
+  <title>Arise</title>
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"></div>
         <div>
-          <div class="brand-name">PC Start-Up</div>
+          <div class="brand-name">Arise</div>
           <div class="brand-sub" id="pcName">Oyun bilgisayarın</div>
         </div>
       </div>
@@ -34,8 +34,12 @@
             <h2>Kütüphane</h2>
             <span class="count" id="gameCount"></span>
           </div>
-          <button class="pill-btn" id="addGameBtn"></button>
+          <div class="head-actions">
+            <button class="pill-btn" id="scanBtn"></button>
+            <button class="pill-btn" id="addGameBtn"></button>
+          </div>
         </div>
+        <div id="newGames" class="new-games" hidden></div>
         <div id="grid" class="grid"></div>
       </section>
       <footer class="foot">Aynı Wi-Fi ağında olmalısın · Ajan portu <span id="footPort">5757</span></footer>
