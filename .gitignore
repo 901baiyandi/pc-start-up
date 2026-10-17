@@ -1,0 +1,6 @@
+# Ajan: her bilgisayarın kendi erişim anahtarı (paylaşma!)
+agent/config.json
+agent/agent.log
+__pycache__/
+# Android derleme çıktıları
+android/build/

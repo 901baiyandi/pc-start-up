@@ -1,0 +1,40 @@
+name: Android APK
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derleme araçlarını kur
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq aapt apksigner zipalign android-sdk-platform-23 dalvik-exchange
+
+      - name: APK derle
+        run: ./android/build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PCStartUp-apk
+          path: android/build/PCStartUp.apk
+
+      - name: Sürüm olarak yayınla
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: PC Start-Up (son sürüm)
+          make_latest: true
+          body: Telefona kurmak için aşağıdaki PCStartUp.apk dosyasını indir.
+          files: android/build/PCStartUp.apk
